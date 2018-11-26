@@ -8,14 +8,15 @@
 using namespace std; 
 
 struct Params{
-	int max_outer_iter;
-	int max_inner_iter;
-	double gamma = 0.99;
-	double epsilon = 0.001;
 	int len_state;
 	int len_action;
-	int style;
+	int max_episode;
+	int max_iter;
 	int total_num_threads;
+	double alpha = 0.5;
+	double gamma = 0.99;
+	double epsilon= 0.2;
+	int style;
 };
 
 void parse_input_argv(Params* para, int argc, char *argv[]){
@@ -40,17 +41,26 @@ void parse_input_argv(Params* para, int argc, char *argv[]){
 		else if (std::string(argv[i - 1]) == "-len_action") {
 			para->len_action = atoi(argv[i]);
 		}
-		else if (std::string(argv[i - 1]) == "-max_outer_iter") {
-			para->max_outer_iter = atoi(argv[i]);
+		else if (std::string(argv[i - 1]) == "-max_episode") {
+			para->max_episode = atoi(argv[i]);
 		}
-		else if (std::string(argv[i - 1]) == "-max_inner_iter") {
-			para->max_inner_iter = atoi(argv[i]);
+		else if (std::string(argv[i - 1]) == "-max_iter") {
+			para->max_iter = atoi(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-nthreads") {
+			para->total_num_threads = atoi(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-style") {
 			para->style = atoi(argv[i]);
 		}
-		else if (std::string(argv[i - 1]) == "-nthreads") {
-			para->total_num_threads = atoi(argv[i]);
+		else if (std::string(argv[i - 1]) == "-gamma") {
+			para->gamma = atof(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-alpha") {
+			para->alpha = atof(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-epsilon") {
+			para->epsilon = atof(argv[i]);
 		}
 		else {
 			cout << "Input number error: [2]" << endl;

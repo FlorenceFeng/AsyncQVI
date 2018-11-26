@@ -1,36 +1,40 @@
-#ifndef QVI_H
-#define QVI_H
+#ifndef QLEARNING_H
+#define QLEARNING_H
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include "util.h"
 #include "so.h"
 using namespace std;
 
 extern pthread_mutex_t writelock;
 
-class QVI{
-	private: 
-		int init_state;
-		int init_action;
-		int next_state;
-		double r;
-		double S;
+class Qlearning {
 	
+	private:
+		int init_state = 0;
+		int init_action = 0;
+		int next_state = 0;
+		double r = 0.;
+		std::default_random_engine generator;
+		std::uniform_real_distribution<double> distribution(0.0,1.0);
+		
 	public:
+		std::vector<std::vector<double>>* Q;
 		std::vector<double>* V;
 		std::vector<int>* pi;
 		Params* params;
 	
-		QVI(std::vector<double>* V_, std::vector<int>* pi_, Params* params_){
+		Qlearning(std::vector<std::vector<double>>* Q_, std::vector<double>* V_, std::vector<int>* pi_, Params* params_){
+			Q = Q_;
 			V = V_;
 			pi = pi_;
 			params = params_;
-			cur_state = 0;
-			cur_action = 0;
 		}
 		
 		void update(int iter){
+			
 			if(params->style == 0){
 				// random update
 				init_state = randnum(0, params->len_state-1);
@@ -49,24 +53,20 @@ class QVI{
 					init_action = randnum(0, len_action-1);
 			}
 			
-			S = 0.;
-			for (int i = 0; i < params->max_inner_iter; i++){
-				so_sailing(init_state, init_action, next_state, r);
-				S += r + params->gamma * V->at(next_state);
-			}
-			S = S / params->max_inner_iter;
-			double newQ = S - (1-params->gamma)*params->epsilon/4;
+			// call for a sample
+			so_sailing(init_state, init_action, next_state, r);
 			
 			// update global variables with mutex
 			pthread_mutex_lock(&writelock);
-			if (newQ > V->at(init_state)){
-				V->at(init_state) = newQ;
-				pi->at(init_state) = init_action;
+			(*Q)[init_state][init_action] = (1-alpha) * (*Q)[init_state][init_action]
+											+ alpha * (r + params->gamma*(*V)[next_state]);
+			if((*Q)[init_state][init_action] > (*V)[init_state]){
+				(*V)[init_state] = (*Q)[init_state][init_action];
+				(*pi)[init_state] = init_action;
 			}
-			pthread_mutex_unlock(&writelock)
+			pthread_mutex_unlock(&writelock);
+			
 		}
-};
-
-
+	}
+	
 #endif
-
