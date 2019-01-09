@@ -3,18 +3,19 @@
 
 #include <iostream>
 #include <thread>
-#include "qvi.h"
+#include "algo.h"
 using namespace std;
 
 extern std::atomic<int> iter;
 
 // asynchronous worker
-void async(int thread_id, QVI qvi, Params* params) {
+template <typename T>
+void async(int thread_id, T t, Params* params) {
 	
 	while(iter < params->max_outer_iter){
 		
 		// asynchronous
-		qvi.update(iter);
+		t.update(iter);
 		iter++;
 	}
 	return;

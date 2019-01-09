@@ -15,19 +15,18 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 DEPENDENCY := $(shell find $(BUILDDIR) -type f -name *.d 2>/dev/null)
 
-# app for PRS solving SOCP
-ASYNCQVI := $(BINDIR)/ASYNCQVI
+PROB := $(BINDIR)/test
 
 CFLAGS := -g -std=c++0x -MMD -w 
 LIB := -lgfortran -lpthread -lm -ansi
 INC := -I include
 
 
-all: $(ASYNCQVI)
+all: $(PROB)
 
-$(ASYNCQVI): build/main.o
-	@echo " $(CC) $^ -o $(ASYNCQVI) $(LIB)"; $(CC) $^ -o $(ASYNCQVI) $(LIB)
-	@echo " $(ASYNCQVI) is successfully built."
+$(PROB): build/test.o
+	@echo " $(CC) $^ -o $(PROB) $(LIB)"; $(CC) $^ -o $(PROB) $(LIB)
+	@echo " $(PROB) is successfully built."
 	@printf '%*s' "150" | tr ' ' "-"
 	@printf '\n'
 
@@ -38,7 +37,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 run:
-	./$(ASYNCQVI) -nthreads 1 -len_state 10 -len_action 10 -max_outer_iter 100 -max_inner_iter 100
+	./$(PROB) -algo 0 -nthreads 40 -style 0 -len_state 1000 -len_action 8 -max_outer_iter 100 -max_inner_iter 100 -sample_num 100
 ##############################################
 clean:
 	@echo " Cleaning...";
