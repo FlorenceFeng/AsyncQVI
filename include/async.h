@@ -1,5 +1,5 @@
-#ifndef ASYNC_H_
-#define ASYNC_H_
+#ifndef ASYNC_H
+#define ASYNC_H
 
 #include <iostream>
 #include <thread>
