@@ -1,5 +1,5 @@
-#ifndef QLEARNING_H
-#define QLEARNING_H
+#ifndef ALGO_H
+#define ALGO_H
 
 #include <iostream>
 #include <vector>
