@@ -4,35 +4,40 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <math.h>
 #include "util.h"
-
-#define DIMX 100
-#define DIMY 100
 #define DIMWIND 8
-#define GOALX 50
-#define GOALY 50
-
+using namespace std;
 class Sailing{
     
 	private:
 		int x;
 		int y;
 		int wind;
-		bool flag = 0;
+		int DIMX;
+		int DIMY;
+		int GOALX;
+		int GOALY;
 		float wind_transition[DIMWIND][DIMWIND] = {
-			{0.4, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3},
-			{0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0},
-			{0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0, 0.0},
-			{0.0, 0.0, 0.4, 0.3, 0.3, 0.0, 0.0, 0.0},
-			{0.0, 0.0, 0.0, 0.4, 0.2, 0.4, 0.0, 0.0},
-			{0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.4, 0.0},
-			{0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.4},
-			{0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3}
+			{0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1, 0.2},
+			{0.2, 0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1},
+			{0.1, 0.2, 0.3, 0.2, 0.1, 0.04, 0.02, 0.04},
+			{0.04, 0.1, 0.2, 0.3, 0.2, 0.1, 0.04, 0.02},
+			{0.02, 0.04, 0.1, 0.2, 0.3, 0.2, 0.1, 0.04},
+			{0.04, 0.02, 0.04, 0.1, 0.2, 0.3, 0.2, 0.1},
+			{0.1, 0.04, 0.02, 0.04, 0.1, 0.2, 0.3, 0.2},
+			{0.2, 0.1, 0.04, 0.02, 0.04, 0.1, 0.2, 0.3}
 		};
 	
 	public:
+		void setValues(Params* params){
+			DIMX = (int)sqrt(params->len_state/DIMWIND);
+			DIMY = DIMX;
+			GOALX = DIMX-1;
+			GOALY = DIMY-1;
+		}
+		
 		void indexToState(int index){
-			// index = wind_ * (dim_x * dim_y) + x * dim_y + y
 			wind = index / (DIMX * DIMY);
 			x = (index - DIMX * DIMY * wind) / DIMY;
 			y = index - DIMX * DIMY * wind - DIMY * x;
@@ -60,26 +65,38 @@ class Sailing{
 			std::pair<int, int> dir = direction(a);
 			x = max(0, min(x + dir.first, DIMX-1));
 			y = max(0, min(y + dir.second, DIMY-1));
+			// noise
+			/*double prob = randdouble(0,1);
+			if(prob < 0.05){
+				x = max(0, min(x + (int)normaldouble(0.,10.), DIMX-1));
+				y = max(0, min(y + (int)normaldouble(0.,10.), DIMY-1));
+				//x = randint(0, DIMX-1);
+				//y = randint(0, DIMY-1);
+			}*/	
 		}
 		
 		double reward(int a){
 			if( x == GOALX && y == GOALY){
-				flag = 1;
-				return 1;
+				return 1.;
 			}
-			int d = abs(a - wind);
-			d = d < 8 - d ? d : 8 - d;
-			return d * 0.05;
+			else if(x==0 & y==0)
+				return 0.;
+			else{	
+				int d = abs(a - wind);
+				d = d < 8 - d ? d : 8 - d;
+				return d * 0.05;
+			}
 		}
 		
 		void windTransition(){
-			double prob = uniformRand();
+			double prob = randdouble(0, 1);
 			double start = 0;
 			for(int nwind = 0; nwind < DIMWIND; nwind++){
 				start += wind_transition[wind][nwind];
-				if(start > prob)
+				if(start > prob){
 					wind = nwind;
-				break;
+					break;
+				}
 			}
 		}
 		
@@ -90,30 +107,36 @@ class Sailing{
 			windTransition();
 			j = stateToIndex();
 		}
+		
 };
 
-void test_sailing(std::vector<int>* pi){
-	Sailing s;
+void test_sailing(Sailing& s, std::vector<int>* pi, Params* params){
+	
+	double start_time = get_wall_time();
+	s.setValues(params);
 	double total_reward = 0.;
-	int max_episode = 100;
-	int max_iter = 100;
 	int flag = 0;
-	for (int episode = 0; episode < max_episode; episode++){
-		int i = 0;
+	int isflag = 0;
+	for (int episode = 0; episode < params->test_max_episode; episode++){
+		int i = randint(0,params->len_state-1);
 		int j = 0;
 		double r = 0;
-		for (int iter = 0; iter < max_iter; iter++){
+		isflag = 0;
+		for (int step = 0; step < params->test_max_step; step++){
 			s.SO(i,(*pi)[i],j,r);
-			total_reward += pow(params.gamma,iter)*r;
-			if(r == 1){
+			total_reward += pow(params->gamma,step)*r;
+			if(r == 1 && !isflag){
 				flag += 1;
-				break;
+				isflag = 1;
+				//break;
 			}
 			i = j;
+			
 		}
 	}
-	total_reward /= max_episode;
-	cout<<"total_reward is "<<total_reward<<endl;
-	cout<<"flag is "<<flag<<"/100"<<endl;
+	params->test_time += get_wall_time() - start_time;
+	total_reward /= params->test_max_episode;
+	cout<<get_wall_time()-params->test_time-params->time<<' '<<total_reward<<' '<<flag<<endl;
+	
 }
 #endif

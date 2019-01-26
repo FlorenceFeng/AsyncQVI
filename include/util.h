@@ -6,20 +6,28 @@
 #include <iostream>
 #include <random>
 #include "util.h"
-
-using namespace std; 
+using namespace std;
 
 struct Params{
 	int max_outer_iter;
 	int max_inner_iter;
 	int sample_num;
 	double gamma = 0.99;
-	double epsilon = 0.001;
+	double epsilon = 0.3;
+	double alpha;
 	int len_state;
 	int len_action;
-	int style = 0;
+	int style = 0;          // cyclic is applicable
 	int total_num_threads;
 	int algo;
+	double time;
+	double test_time=0;
+	int save = 0;
+	int test_max_episode = 100;
+	int test_max_step = 200;
+	int check_step;
+	int stop=0;
+	int threshold=0;
 };
 
 // generate a uniformly random integer in [start, end]
@@ -38,6 +46,13 @@ double randdouble(double start, double end){
 	std::mt19937 rng(rd());    
 	std::uniform_real_distribution<double> unif(0,1);
 	return start + unif(rng)*(end-start);
+}
+
+double normaldouble(double mean, double var){
+	std::random_device rd;     
+	std::mt19937 rng(rd());   
+	std::normal_distribution<double> normal(mean, var);
+	return normal(rng);
 }
 
 void parse_input_argv(Params* para, int argc, char *argv[]){
@@ -68,11 +83,26 @@ void parse_input_argv(Params* para, int argc, char *argv[]){
 		else if (std::string(argv[i - 1]) == "-max_inner_iter") {
 			para->max_inner_iter = atoi(argv[i]);
 		}
+		else if (std::string(argv[i - 1]) == "-test_max_episode") {
+			para->test_max_episode = atoi(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-test_max_step") {
+			para->test_max_step = atoi(argv[i]);
+		}
 		else if (std::string(argv[i - 1]) == "-sample_num") {
 			para->sample_num = atoi(argv[i]);
 		}
+		else if (std::string(argv[i - 1]) == "-check_step") {
+			para->check_step = atoi(argv[i]);
+		}
 		else if (std::string(argv[i - 1]) == "-style") {
 			para->style = atoi(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-save") {
+			para->save = atoi(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-alpha") {
+			para->alpha = atof(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-algo") {
 			para->algo = atoi(argv[i]);
