@@ -11,27 +11,27 @@ using namespace std;
 struct Params{
 	int max_outer_iter;
 	int max_inner_iter;
-	int sample_num;
-	double gamma = 0.99;
-	double epsilon = 0.3;
-	double alpha;
-	int len_state;
-	int len_action;
-	int style = 0;          // cyclic is applicable
-	int total_num_threads;
-	int algo;
+	int sample_num;			
+	double gamma = 0.99;	// discounted factor
+	double epsilon = 0.3;	// Q-learning exploration parameter
+	double alpha;           // Q-learning learning rate
+	int len_state;			// dimension of state space
+	int len_action;			// dimension of action space
+	int style;         		// sample style
+	int total_num_threads;  // total number of threads
+	int algo;				// which algorithm to run
 	double time;
 	double test_time=0;
-	int save = 0;
-	int test_max_episode = 100;
-	int test_max_step = 200;
-	int check_step;
+	int save = 0;			// save final policy if 1
+	int test_max_episode = 100; // test episodes
+	int test_max_step = 200;	// how many steps to go in one test episode
+	int check_step;				// how often to check policy
 	int stop=0;
 	int threshold=0;
 };
 
 // generate a uniformly random integer in [start, end]
-// this function might get error in Windows
+// this function might get error on Windows
 int randint(int start, int end){
 	std::random_device rd;     // only used once to initialise (seed) engine
 	std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
@@ -40,7 +40,7 @@ int randint(int start, int end){
 }
 
 // generate a uniformly random double in (start, end)
-// this function might get error in Windows 
+// this function might get error on Windows 
 double randdouble(double start, double end){
 	std::random_device rd;     
 	std::mt19937 rng(rd());    
@@ -48,6 +48,8 @@ double randdouble(double start, double end){
 	return start + unif(rng)*(end-start);
 }
 
+// generate a normally distributed double with mean and variance
+// this function might get error on Windows 
 double normaldouble(double mean, double var){
 	std::random_device rd;     
 	std::mt19937 rng(rd());   
@@ -55,6 +57,7 @@ double normaldouble(double mean, double var){
 	return normal(rng);
 }
 
+// load parameters from makefile
 void parse_input_argv(Params* para, int argc, char *argv[]){
 	
 	if (argc < 2) {

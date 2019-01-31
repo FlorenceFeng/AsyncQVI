@@ -8,16 +8,20 @@
 #include "util.h"
 #define DIMWIND 8
 using namespace std;
+
+// sample orable for sailing problem
 class Sailing{
     
 	private:
-		int x;
-		int y;
-		int wind;
-		int DIMX;
-		int DIMY;
-		int GOALX;
-		int GOALY;
+		int x; // x coordinate of current position
+		int y; // y coordinate of current position
+		int wind; // current wind direction
+		int DIMX; // range of x
+		int DIMY; // range of y
+		int GOALX;// x coordinate of Goal state
+		int GOALY;// y coordinate of Goal state
+		
+		// transition matrix for wind direction
 		float wind_transition[DIMWIND][DIMWIND] = {
 			{0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1, 0.2},
 			{0.2, 0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1},
@@ -37,16 +41,19 @@ class Sailing{
 			GOALY = DIMY-1;
 		}
 		
+		// map the ith state to position and wind
 		void indexToState(int index){
 			wind = index / (DIMX * DIMY);
 			x = (index - DIMX * DIMY * wind) / DIMY;
 			y = index - DIMX * DIMY * wind - DIMY * x;
 		}
-	
+		
+		// map position and wind to the ith state
 		int stateToIndex(){
 			return wind * DIMX * DIMY + x * DIMY + y;
 		}
 		
+		// actions
 		std::pair<int, int> direction(int a){
 			switch( a ) {
 				case 0: return std::make_pair(0, 1);
@@ -61,20 +68,21 @@ class Sailing{
 			}
 		}
 		
+		// apply action to current state 
 		void apply(int a){
 			std::pair<int, int> dir = direction(a);
 			x = max(0, min(x + dir.first, DIMX-1));
 			y = max(0, min(y + dir.second, DIMY-1));
-			// noise
-			/*double prob = randdouble(0,1);
+			
+			// some noise in positioning
+			double prob = randdouble(0,1);
 			if(prob < 0.05){
 				x = max(0, min(x + (int)normaldouble(0.,10.), DIMX-1));
 				y = max(0, min(y + (int)normaldouble(0.,10.), DIMY-1));
-				//x = randint(0, DIMX-1);
-				//y = randint(0, DIMY-1);
-			}*/	
+			}	
 		}
 		
+		// instant reward
 		double reward(int a){
 			if( x == GOALX && y == GOALY){
 				return 1.;
@@ -100,6 +108,7 @@ class Sailing{
 			}
 		}
 		
+		// sample oracle function: given init_state[i], init_action[a], rewrite next_state[j] and reward[r]
 		void SO(int i, int a, int& j, double& r){
 			indexToState(i);
 			apply(a);
@@ -110,14 +119,19 @@ class Sailing{
 		
 };
 
+// policy evaluation
 void test_sailing(Sailing& s, std::vector<int>* pi, Params* params){
 	
 	double start_time = get_wall_time();
 	s.setValues(params);
+	// total discounted reward
 	double total_reward = 0.;
+	// how many times has the goal state been reached.
 	int flag = 0;
 	int isflag = 0;
+	// run text_max_episode episodes
 	for (int episode = 0; episode < params->test_max_episode; episode++){
+		// start from an arbitrary state
 		int i = randint(0,params->len_state-1);
 		int j = 0;
 		double r = 0;
@@ -128,15 +142,14 @@ void test_sailing(Sailing& s, std::vector<int>* pi, Params* params){
 			if(r == 1 && !isflag){
 				flag += 1;
 				isflag = 1;
-				//break;
 			}
 			i = j;
-			
 		}
 	}
 	params->test_time += get_wall_time() - start_time;
+	// average total reward
 	total_reward /= params->test_max_episode;
 	cout<<get_wall_time()-params->test_time-params->time<<' '<<total_reward<<' '<<flag<<endl;
-	
+	return;
 }
 #endif

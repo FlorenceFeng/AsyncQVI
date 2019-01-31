@@ -1,5 +1,5 @@
-#ifndef ALGO_H
-#define ALGO_H
+#ifndef QLEARNING_H
+#define QLEARNING_H
 
 #include <iostream>
 #include <vector>
@@ -10,7 +10,7 @@ using namespace std;
 extern pthread_mutex_t writelock;
 
 class QVI{
-	private: 
+	private: // local variables for each thread
 		int init_state;
 		int init_action;
 		int next_state;
@@ -18,11 +18,12 @@ class QVI{
 		double S;
 		Sailing s;
 	
-	public:
+	public:  // global variables
 		std::vector<double>* V;
 		std::vector<int>* pi;
 		Params* params;
 	
+		// constructor
 		QVI(std::vector<double>* V_, std::vector<int>* pi_, Params* params_){
 			V = V_;
 			pi = pi_;
@@ -32,36 +33,31 @@ class QVI{
 			s.setValues(params);
 		}
 		
+		// update global variables
 		void update(int iter){
-			//cout<<iter<<endl;
+			
+			// select (state, action) uniformly random
 			if(params->style == 0){
-				// random update
 				init_state = randint(0, params->len_state-1);
 				init_action = randint(0, params->len_action-1);
 			}
-			else if(params->style == 1){
-				// cyclic update
+			// select (state, action) globally cyclic
+			else{
 				init_state = (iter/params->len_action) % params->len_state;
 				init_action = iter % params->len_action;
-			}
-			else{
-				// Markovian update
-				init_state = next_state;
-				init_action = (*pi)[next_state];
-				if(randdouble(0.,1.) < params->epsilon)
-					init_action = randint(0, params->len_action-1);
 			}
 			
 			S = 0.;
 			for (int i = 0; i < params->max_inner_iter; i++){
+				// call sample oracle
 				s.SO(init_state, init_action, next_state, r);
-				//cout<<init_state<<' '<<init_action<<' '<<next_state<<' '<<r<<endl;
 				S += r + params->gamma * V->at(next_state);
 			}
+			// averaged reward
 			S = S / params->max_inner_iter;
 			double newQ = S - (1-params->gamma)*params->epsilon/4;
 			
-			
+			// update shared memory
 			pthread_mutex_lock(&writelock);
 			if (newQ > V->at(init_state)){
 				V->at(init_state) = newQ;
@@ -70,6 +66,7 @@ class QVI{
 			pthread_mutex_unlock(&writelock);
 		}
 		
+		// evaluate current policy
 		void test(){
 			test_sailing(s, pi, params);
 		}
@@ -77,14 +74,14 @@ class QVI{
 
 class Qlearning {
 	
-	private:
+	private: // local variables for each thread
 		int init_state = 0;
 		int init_action = 0;
 		int next_state = 0;
 		double r = 0.;
 		Sailing s;
 		
-	public:
+	public:  // global variables
 		std::vector<std::vector<double>>* Q;
 		std::vector<double>* V;
 		std::vector<int>* pi;
@@ -101,19 +98,20 @@ class Qlearning {
 			s.setValues(params);			
 		}
 		
+		// update global variables
 		void update(int iter){
 			
-			// random update
+			// select (state, action) uniformly random
 			if(params->style == 0){
 				init_state = randint(0, params->len_state-1); 
 				init_action = randint(0, params->len_action-1); 
 			}
-			// global cyclic update
+			// select (state, action) globally cyclic 
 			else if(params->style == 1){
 				init_state = (iter/params->len_action) % params->len_state;
 				init_action = iter % params->len_action;
 			}
-			// Markovian update
+			// select (state, action) following a Markovian trajectory with some exploration
 			else{
 				init_state = next_state;
 				init_action = (*pi)[next_state];
@@ -121,12 +119,13 @@ class Qlearning {
 					init_action = randint(0, params->len_action-1);
 			}
 			
-			// call for a sample
+			// call sample oracle
 			s.SO(init_state, init_action, next_state, r);
 			
 			// update global variables with mutex
 			pthread_mutex_lock(&writelock);
-			params->alpha = 1./pow(iter,0.5);
+			// learning rate of Q-learning
+			params->alpha = 1./pow(iter,0.51);
 			(*Q)[init_state][init_action] = (1-params->alpha) * (*Q)[init_state][init_action]
 											+ params->alpha * (r + params->gamma*(*V)[next_state]);
 			if((*Q)[init_state][init_action] > (*V)[init_state]){
@@ -136,6 +135,7 @@ class Qlearning {
 			pthread_mutex_unlock(&writelock);			
 		}
 		
+		// evaluate current policy
 		void test(){
 			test_sailing(s, pi, params);
 		}
@@ -174,7 +174,6 @@ class VRVI{
 			for(int t = 0; t < params->max_outer_iter; t++){
 				
 				// approximate x
-				
 				for(int i = 0; i < params->len_state; i++){
 					for(int a = 0; a < params->len_action; a++){
 						(*x)[i][a] = 0;
@@ -206,7 +205,7 @@ class VRVI{
 				}
 				
 				*v_outer = *v_inner;
-				if(t%params->check_step==0){
+				if(t % params->check_step==0){
 					test_sailing(s, pi, params);
 				}
 		

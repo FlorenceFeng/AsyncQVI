@@ -1,5 +1,5 @@
-#ifndef ASYNC_H
-#define ASYNC_H
+#ifndef ASYNC_H_
+#define ASYNC_H_
 
 #include <iostream>
 #include <thread>
@@ -9,22 +9,22 @@
 using namespace std;
 extern std::atomic<int> iter;
 extern pthread_barrier_t barrier; 
-// asynchronous worker
+
+// asynchronous running with multiple QVI objects 
 void asyncQVI(int thread_id, QVI qvi, Params* params) {
 	
 	while(!params->stop){
-		
-		// asynchronous
 		qvi.update(iter);
 		iter++;
+		
+		// evaluate policy every check_step iterations  
 		if(iter > params->threshold){
+			// let one thread check policy quality
 			pthread_barrier_wait(&barrier);
 			if(thread_id == 0){
 				cout<<iter<<' ';
 				qvi.test();
 				params->threshold += params->check_step;
-				//params->max_inner_iter = min(params->max_inner_iter*2., 100.);
-				//cout<<params->max_inner_iter<<endl;
 				if(iter > params->max_outer_iter)
 					params->stop = 1;
 			}
@@ -34,14 +34,16 @@ void asyncQVI(int thread_id, QVI qvi, Params* params) {
 	return;
 }
 
+// asynchronous running with multiole Qlearning objects
 void asyncQL(int thread_id, Qlearning ql, Params* params) {
 	
 	while(!params->stop){
-		
-		// asynchronous
 		ql.update(iter);
 		iter++;
+		
+		// evaluate policy every check_step iterations
 		if(iter > params->threshold){
+			// let one thread check policy quality
 			pthread_barrier_wait(&barrier);
 			if(thread_id == 0){
 				cout<<iter<<' ';
