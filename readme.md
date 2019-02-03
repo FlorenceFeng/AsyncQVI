@@ -5,10 +5,10 @@ A light c++11 package for three reinforment learning algorithms under generative
 - AsyncQL  http://www.mit.edu/~jnt/Papers/J052-94-jnt-q.pdf
 - VRVI     https://arxiv.org/abs/1710.09988
 
-where the first two are implemented in asynchronous parallel fashion and the last one is single-threaded. Users should read the paper for algorithm descriptions.
+where the first two are implemented in asynchronous parallel fashion and the last one is single-threaded. Users should read papers for algorithm descriptions.
 
 ## Usage
-We implement parallel computing with c++11 and the <pthread.h> lib. A gcc 4.8+ compiler is required. One can either run on Linux or Windows with MinGW (http://www.math.ucla.edu/~wotaoyin/windows_coding.html). After downloading the package, redirect to where the makefile is. To compile, insert the command
+We implement parallel computing with c++11 and the <pthread.h> lib. A gcc 4.8+ compiler is required. One can either run on Linux or Windows with MinGW (http://www.math.ucla.edu/~wotaoyin/windows_coding.html). After downloading the package, redirect to where the makefile locates. To compile, insert the command
 
     make
 
@@ -17,7 +17,10 @@ To execute, insert the command
     make run
 
 ## Parameter Settings
-Users can set parameter values either in util.h -> struct Params or in makefile (Line 38). We list the parameter dictionary for three algorithms as below:
+Users can set parameter abc with value xyz either in util.h -> struct Params (recompile after modification) or in makefile (Line 38) with 
+
+    -abc xyz 
+The parameter dictionary for three algorithms are listed below:
 
 ### General ###
 Name | Meaning
