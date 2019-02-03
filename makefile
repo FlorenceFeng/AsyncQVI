@@ -35,7 +35,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@echo " $(CC) $(CFLAGS) $(INC) -c -o $@ $<"; $(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 run:
-	./$(PROB) -algo 0 -nthreads 4 -alpha 0.9 -check_step 100000 -style 1 -len_state 20000 -len_action 8 -max_outer_iter 100000000 -max_inner_iter 5 -sample_num 10
+	./$(PROB) -algo 0 -nthreads 4 -check_step 100000 -style 1 -len_state 20000 -len_action 8 -max_outer_iter 1000000 -max_inner_iter 5
 ##############################################
 clean:
 	@echo " Cleaning...";
