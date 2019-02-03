@@ -1,6 +1,6 @@
 # User Guide
 
-A light c++11 package for three reinforment learning algorithms under generative model:
+A light c++11 package for three reinforcement learning algorithms under generative model:
 - AsyncQVI: [AsyncQVI: Asynchronous-Parallel Q-Value Iteration for Reinforcement Learning with Near-Optimal Sample Complexity.](https://arxiv.org/abs/1812.00885) Yibo Zeng, Fei Feng, Wotao Yin
 - AsyncQL: [Asynchronous Stochastic Approximation and Q-Learning.](http://www.mit.edu/~jnt/Papers/J052-94-jnt-q.pdf) John N. Tsitsiklis
 - VRVI:     [Variance Reduced Value Iteration and Faster Algorithms for Solving Markov Decision Process.](https://arxiv.org/abs/1710.09988) Aaron Sidford, Mengdi Wang, Xian Wu, Yinyu Ye
