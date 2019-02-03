@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <iterator>
 #include <algorithm>
 #include <stdlib.h>
 #include <time.h>
@@ -136,7 +137,7 @@ class Qlearning {
 			// update global variables with mutex
 			pthread_mutex_lock(&writelock);
 			// learning rate of Q-learning
-			params->alpha = 1./pow(iter,0.51);
+			//params->alpha = 1./pow(iter,0.51);
 			(*Q)[init_state][init_action] = (1-params->alpha) * (*Q)[init_state][init_action]
 											+ params->alpha * (r + params->gamma*(*V)[next_state]);
 			if((*Q)[init_state][init_action] > (*V)[init_state]){
@@ -224,6 +225,106 @@ class VRVI{
 			}
 		}
 		
+};
+
+class VRQVI{
+	private:
+		int init_state = 0;
+		int init_action = 0;
+		int next_state = 0;
+		double r = 0.;
+		double temp = 0.;
+		double v_outer_max = 0.;
+		Sailing s;
+	
+	public:
+		std::vector<std::vector<double>>* Q;
+		std::vector<std::vector<double>>* w;
+		std::vector<double>* v_outer;
+		std::vector<double>* v_inner;
+		std::vector<int>* pi;
+		Params* params;
+	
+		VRQVI(std::vector<std::vector<double>>* Q_, 
+			 std::vector<std::vector<double>>* w_, 
+						 std::vector<double>* v_outer_,
+						 std::vector<double>* v_inner_,
+						 std::vector<int>* pi_,
+						 Params* params_){
+				Q = Q_;
+				w = w_;
+				v_outer = v_outer_;
+				v_inner = v_inner_;
+				pi = pi_;
+				params = params_;
+				s.setValues(params);			
+		}
+	
+		void solve(){
+			srand (time(NULL));
+			for(int t = 0; t < params->max_outer_iter; t++){
+				
+				// max element of v_fix
+				v_outer_max = fabs((*v_outer)[0]);
+				for(int index = 1; index < params->len_state; index++){
+					if(fabs((*v_outer)[index]) > v_outer_max)
+						v_outer_max = fabs((*v_outer)[index]);
+				}
+				
+				// compute a coarse estimate of Q
+				for(int i = 0; i < params->len_state; i++){
+					for(int a = 0; a < params->len_action; a++){
+						double v_sum = 0;
+						double v_square_sum = 0;
+						double r_sum = 0;
+						for(int n = 0; n < params->sample_num; n++){
+							s.SO(i, a, next_state, r);
+							v_sum += (*v_outer)[next_state];
+							v_square_sum += pow((*v_outer)[next_state],2);
+							r_sum += r;
+						}
+						double v_ave = v_sum / params->sample_num;
+						double v_square_ave = v_square_sum / params->sample_num;
+						double r_ave = r / params->sample_num;
+						(*w)[i][a] = v_ave - sqrt(2*params->alpha1*(v_square_ave-v_ave))
+						            - (4*pow(params->alpha1,0.75) + 2/3*params->alpha1)*v_outer_max;
+						(*Q)[i][a] = r_ave + params->gamma * (*w)[i][a];
+						
+					}
+				}
+				
+			    // improve Q 
+				for(int k = 0; k < params->max_inner_iter; k++){				
+					// compute the estimate of P(v_inner - v_outer)
+					for(int i = 0; i < params->len_state; i++){
+						//vector<double> Q_i = Q->at(i);
+						// update v and pi
+						if((*v_inner)[i] < *max_element(((*Q)[i]).begin(), ((*Q)[i]).end())){
+							(*v_inner)[i] = *max_element(((*Q)[i]).begin(), ((*Q)[i]).end());
+							(*pi)[i] =  distance(((*Q)[i]).begin(), max_element(((*Q)[i]).begin(), ((*Q)[i]).end()));
+						}
+					}
+				
+					for(int i = 0; i < params->len_state; i++){
+						for(int a = 0; a < params->len_action; a++){
+							double g = 0.;
+							for(int n = 0; n < params->sample_num; n++){
+								s.SO(i, a, next_state, r);
+								g += r + params->gamma * ((*v_inner)[next_state]-(*v_outer)[next_state]);
+							}
+							(*Q)[i][a] = g/params->sample_num -(1-params->gamma)*params->u/8.
+							             + params->gamma * (*w)[i][a];					
+						}
+					}
+				}
+				
+				*v_outer = *v_inner;
+				if(t % params->check_step==0){
+					test_sailing(s, pi, params);
+				}
+			}
+			return;
+		}
 };
 	
 #endif

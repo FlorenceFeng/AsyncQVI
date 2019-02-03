@@ -72,7 +72,7 @@ int main(int argc, char** argv){
 		}
 	}
 	// run VRVI
-	else{
+	else if(params.algo == 2){
 		// the x matrix in paper (Algo 3)
 		std::vector<std::vector<double>> x(params.len_state, std::vector<double>(params.len_action, 0.));
 		// input v_0 of Randomized VI 
@@ -82,6 +82,20 @@ int main(int argc, char** argv){
 		
 		// VRVI object (defined in algo.h)
 		VRVI obj(&x, &v_outer, &v_inner, &pi, &params); 
+		obj.solve();
+	}
+	// run VRQVI
+	else{
+		// the Q, w matrix in paper (Algo 1)
+		std::vector<std::vector<double>> Q(params.len_state, std::vector<double>(params.len_action, 0.));
+		std::vector<std::vector<double>> w(params.len_state, std::vector<double>(params.len_action, 0.));		
+		// input v0 for Algo 1
+		std::vector<double> v_outer(params.len_state, 0.);
+		// v^i in Algo 1
+		std::vector<double> v_inner(params.len_state, 0.);
+		
+		// VRVI object (defined in algo.h)
+		VRQVI obj(&Q, &w, &v_outer, &v_inner, &pi, &params); 
 		obj.solve();
 	}
 	

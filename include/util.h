@@ -17,6 +17,8 @@ struct Params{
 	double gamma = 0.99;	// discounted factor
 	double epsilon = 0.3;	// Q-learning exploration parameter
 	double alpha;           // Q-learning learning rate
+	double alpha1 = 0.;          // a parameter in VRQVI
+	double u = 0.;               // a parameter in VRQVI
 	int len_state;			// dimension of state space
 	int len_action;			// dimension of action space
 	int style;         		// sample style
@@ -83,6 +85,12 @@ void parse_input_argv(Params* para, int argc, char *argv[]){
 		}
 		else if (std::string(argv[i - 1]) == "-alpha") {
 			para->alpha = atof(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-alpha1") {
+			para->alpha1 = atof(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-u") {
+			para->u = atof(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-gamma") {
 			para->gamma = atof(argv[i]);
