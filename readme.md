@@ -18,7 +18,7 @@ To execute with certain input parameters (see makefile, Line 38), insert the com
 
 In the current makefile example, we test with parameters
 
-    -algo 0 -nthreads 4 -check_step 100000 -style 1 -len_state 20000 -len_action 8 -max_outer_iter 1000000 -max_inner_iter 5
+    -algo 0 -nthreads 4 -check_step 100000 -style 1 -len_state 20000 -len_action 8 -max_outer_iter 10000000 -max_inner_iter 5
 
 which represents solving a sailing problem (our test example) with 20000 states and 8 actions using AsyncQVI (-algo 0) with 4 threads ( -nthreads 4), globally cyclic sampling (-style 1), and 5 samples per approximation (-max_inner_iter 5) for at most 1000000 global iterations (-max_outer_iter 1000000). Read below for more details about parameter settings.
 
