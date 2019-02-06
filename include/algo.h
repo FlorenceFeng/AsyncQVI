@@ -127,7 +127,7 @@ class Qlearning {
 			else{
 				init_state = next_state;
 				init_action = (*pi)[next_state];
-				if(uniformDouble(0.,1.) < params->epsilon)
+				if(uniformDouble(0.,1.) < params->explore)
 					init_action = uniformInt(0, params->len_action-1);
 			}
 			
@@ -190,11 +190,11 @@ class VRVI{
 				for(int i = 0; i < params->len_state; i++){
 					for(int a = 0; a < params->len_action; a++){
 						(*x)[i][a] = 0;
-						for(int n = 0; n < params->sample_num; n++){
+						for(int n = 0; n < params->sample_num_1; n++){
 							s.SO(i, a, next_state, r);
 							(*x)[i][a] += params->gamma * (*v_outer)[next_state];
 						}
-						(*x)[i][a] /= params->sample_num;
+						(*x)[i][a] /= params->sample_num_1;
 					}
 				}
 				
@@ -204,18 +204,23 @@ class VRVI{
 					for(int i = 0; i < params->len_state; i++){
 						for(int a = 0; a < params->len_action; a++){
 							temp = 0.;
-							for(int n = 0; n < params->sample_num; n++){
+							for(int n = 0; n < params->sample_num_2; n++){
 								s.SO(i, a, next_state, r);
 								temp += r + params->gamma * ((*v_inner)[next_state]-(*v_outer)[next_state]);
 							}
-							temp = temp/params->sample_num + (*x)[i][a];
-							if (temp > (*v_inner)[i]){
-								(*v_inner)[i] = temp;
+							temp = temp/params->sample_num_2 + (*x)[i][a];
+							if (temp - 2*params->gamma*params->epsilon > (*v_inner)[i]){
+								(*v_inner)[i] = temp-2*params->gamma*params->epsilon;
 								(*pi)[i] = a;
 							}
 						}
 					}
 				}
+				
+				// reset parameters
+				params->epsilon /= 2.;
+				params->sample_num_1 *= 4;
+				params->sample_num_2 *= 4;
 				
 				*v_outer = *v_inner;
 				if(t % params->check_step==0){
@@ -277,15 +282,15 @@ class VRQVI{
 						double v_sum = 0;
 						double v_square_sum = 0;
 						double r_sum = 0;
-						for(int n = 0; n < params->sample_num; n++){
+						for(int n = 0; n < params->sample_num_1; n++){
 							s.SO(i, a, next_state, r);
 							v_sum += (*v_outer)[next_state];
 							v_square_sum += pow((*v_outer)[next_state],2);
 							r_sum += r;
 						}
-						double v_ave = v_sum / params->sample_num;
-						double v_square_ave = v_square_sum / params->sample_num;
-						double r_ave = r / params->sample_num;
+						double v_ave = v_sum / params->sample_num_1;
+						double v_square_ave = v_square_sum / params->sample_num_1;
+						double r_ave = r / params->sample_num_1;
 						(*w)[i][a] = v_ave - sqrt(2*params->alpha1*(v_square_ave-v_ave))
 						            - (4*pow(params->alpha1,0.75) + 2/3*params->alpha1)*v_outer_max;
 						(*Q)[i][a] = r_ave + params->gamma * (*w)[i][a];
@@ -297,7 +302,6 @@ class VRQVI{
 				for(int k = 0; k < params->max_inner_iter; k++){				
 					// compute the estimate of P(v_inner - v_outer)
 					for(int i = 0; i < params->len_state; i++){
-						//vector<double> Q_i = Q->at(i);
 						// update v and pi
 						if((*v_inner)[i] < *max_element(((*Q)[i]).begin(), ((*Q)[i]).end())){
 							(*v_inner)[i] = *max_element(((*Q)[i]).begin(), ((*Q)[i]).end());
@@ -308,15 +312,19 @@ class VRQVI{
 					for(int i = 0; i < params->len_state; i++){
 						for(int a = 0; a < params->len_action; a++){
 							double g = 0.;
-							for(int n = 0; n < params->sample_num; n++){
+							for(int n = 0; n < params->sample_num_2; n++){
 								s.SO(i, a, next_state, r);
 								g += r + params->gamma * ((*v_inner)[next_state]-(*v_outer)[next_state]);
 							}
-							(*Q)[i][a] = g/params->sample_num -(1-params->gamma)*params->u/8.
+							(*Q)[i][a] = g/params->sample_num_2 -(1-params->gamma)*params->epsilon/8.
 							             + params->gamma * (*w)[i][a];					
 						}
 					}
 				}
+				// reset parameters
+				params->epsilon /= 2.;
+				params->sample_num_1 *= 4;
+				params->sample_num_2 *= 4;
 				
 				*v_outer = *v_inner;
 				if(t % params->check_step==0){
