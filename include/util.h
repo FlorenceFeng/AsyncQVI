@@ -73,10 +73,10 @@ void parse_input_argv(Params* para, int argc, char *argv[]){
 			para->test_max_step = atoi(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-sample_num_1") {
-			para->sample_num = atoi(argv[i]);
+			para->sample_num_1 = atoi(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-sample_num_2") {
-			para->sample_num = atoi(argv[i]);
+			para->sample_num_2 = atoi(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-check_step") {
 			para->check_step = atoi(argv[i]);
