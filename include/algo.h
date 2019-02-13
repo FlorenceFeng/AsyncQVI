@@ -208,9 +208,10 @@ class VRVI{
 								s.SO(i, a, next_state, r);
 								temp += r + params->gamma * ((*v_inner)[next_state]-(*v_outer)[next_state]);
 							}
-							temp = temp/params->sample_num_2 + (*x)[i][a];
-							if (temp - 2*params->gamma*params->epsilon > (*v_inner)[i]){
-								(*v_inner)[i] = temp-2*params->gamma*params->epsilon;
+							temp = temp/params->sample_num_2 + params->gamma * (*x)[i][a]
+								- 2*params->gamma*params->epsilon;
+							if (temp > (*v_inner)[i]){
+								(*v_inner)[i] = temp;
 								(*pi)[i] = a;
 							}
 						}
