@@ -137,7 +137,7 @@ class Qlearning {
 			// update global variables with mutex
 			pthread_mutex_lock(&writelock);
 			// learning rate of Q-learning
-			//params->alpha = 1./pow(iter,0.51);
+			// params->alpha = 1./pow(iter,0.51);
 			(*Q)[init_state][init_action] = (1-params->alpha) * (*Q)[init_state][init_action]
 											+ params->alpha * (r + params->gamma*(*V)[next_state]);
 			if((*Q)[init_state][init_action] > (*V)[init_state]){
@@ -192,7 +192,7 @@ class VRVI{
 						(*x)[i][a] = 0;
 						for(int n = 0; n < params->sample_num_1; n++){
 							s.SO(i, a, next_state, r);
-							(*x)[i][a] += params->gamma * (*v_outer)[next_state];
+							(*x)[i][a] += (*v_outer)[next_state];
 						}
 						(*x)[i][a] /= params->sample_num_1;
 					}
