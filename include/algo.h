@@ -291,7 +291,7 @@ class VRQVI{
 						}
 						double v_ave = v_sum / params->sample_num_1;
 						double v_square_ave = v_square_sum / params->sample_num_1;
-						double r_ave = r / params->sample_num_1;
+						double r_ave = r_sum / params->sample_num_1;
 						(*w)[i][a] = v_ave - sqrt(2*params->alpha1*(v_square_ave-v_ave))
 						            - (4*pow(params->alpha1,0.75) + 2/3*params->alpha1)*v_outer_max;
 						(*Q)[i][a] = r_ave + params->gamma * (*w)[i][a];
