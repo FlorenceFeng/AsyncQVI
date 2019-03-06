@@ -19,8 +19,8 @@ pthread_barrierattr_t attr;
 // random number generator on Windows
 std::default_random_engine generator;
 // random number generator on Linux
-std::random_device rd;     
-std::mt19937 rng(rd()); 
+std::random_device global_rd;     
+std::mt19937 global_rng(global_rd()); 
 
 int main(int argc, char** argv){
 	

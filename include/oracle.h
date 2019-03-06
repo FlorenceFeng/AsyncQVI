@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <string>
 #include <math.h>
+#include <random>
 #include "util.h"
 #define DIMWIND 8
 using namespace std;
@@ -20,7 +21,9 @@ class Sailing{
 		int DIMY; // range of y
 		int GOALX;// x coordinate of Goal state
 		int GOALY;// y coordinate of Goal state
-		
+		int TRAP[4][2];
+		std::mt19937 local_rng; // local random generator, faster for parallel computing
+			
 		// transition matrix for wind direction
 		float wind_transition[DIMWIND][DIMWIND] = {
 			{0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1, 0.2},
@@ -34,11 +37,31 @@ class Sailing{
 		};
 	
 	public:
+		
 		void setValues(Params* params){
 			DIMX = (int)sqrt(params->len_state/DIMWIND);
 			DIMY = DIMX;
 			GOALX = (int)DIMX/2;
 			GOALY = GOALX;
+			TRAP[0][0]= (int)DIMX/4;
+			TRAP[0][1] = (int)DIMY/4;
+			TRAP[1][0] = (int)DIMX/4;
+			TRAP[1][1] = (int)DIMY*3/4;
+			TRAP[2][0] = (int)DIMX*3/4;
+			TRAP[2][1] = (int)DIMY/4;
+			TRAP[3][0] = (int)DIMX*3/4;
+			TRAP[3][1] = (int)DIMY*3/4;
+			local_rng.seed(uniformInt(0,100));
+		}
+		
+		double localNormalDouble(double mean, double var){ 
+			std::normal_distribution<double> normal(mean, var);
+			return normal(local_rng);
+		}
+		
+		double localUniformDouble(double start, double end){
+			std::uniform_real_distribution<double> unif(0,1);
+			return start + unif(local_rng)*(end-start);
 		}
 		
 		// map the ith state to position and wind
@@ -75,10 +98,19 @@ class Sailing{
 			y = max(0, min(y + dir.second, DIMY-1));
 			
 			// some noise in positioning
-			double prob = uniformDouble(0,1);
+			double prob = localUniformDouble(0,1);
+			
 			if(prob < 0.05){
-				x = max(0, min(x + (int)normalDouble(0.,10.), DIMX-1));
-				y = max(0, min(y + (int)normalDouble(0.,10.), DIMY-1));
+				x = max(0, min(x + (int)localNormalDouble(0.,10.), DIMX-1));
+				y = max(0, min(y + (int)localNormalDouble(0.,10.), DIMY-1));
+			}
+			
+			// whether fall into traps
+			for(int i = 0; i < 4; i++){
+				if (x==TRAP[i][0] && y == TRAP[i][1]){
+					x = 0;
+					y = 0;
+				}
 			}
 		}
 		
@@ -97,7 +129,7 @@ class Sailing{
 		}
 		
 		void windTransition(){
-			double prob = uniformDouble(0, 1);
+			double prob = localUniformDouble(0, 1);
 			double start = 0;
 			for(int nwind = 0; nwind < DIMWIND; nwind++){
 				start += wind_transition[wind][nwind];
@@ -108,16 +140,27 @@ class Sailing{
 			}
 		}
 		
+		void trapTransition(){
+			// change of traps
+			for(int i = 0; i < 4; i++){
+				TRAP[i][0] = max(0, min(TRAP[i][0] + (int)localNormalDouble(0.,.1), DIMX-1));
+				TRAP[i][1] = max(0, min(TRAP[i][1] + (int)localNormalDouble(0.,.1), DIMY-1));
+			}
+		}
+		
+		
 		// sample oracle function: given init_state[i], init_action[a], rewrite next_state[j] and reward[r]
 		void SO(int i, int a, int& j, double& r){
 			indexToState(i);
 			apply(a);
 			r = reward(a);
 			windTransition();
+			trapTransition();
 			j = stateToIndex();
 		}
 		
 };
+
 
 // policy evaluation
 void test_sailing(Sailing& s, std::vector<int>* pi, Params* params){

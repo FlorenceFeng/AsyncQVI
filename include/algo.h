@@ -324,8 +324,8 @@ class VRQVI{
 				}
 				// reset parameters
 				params->epsilon /= 2.;
-				params->sample_num_1 *= 4;
-				params->sample_num_2 *= 4;
+				params->sample_num_1 *= 2;
+				params->sample_num_2 *= 2;
 				
 				*v_outer = *v_inner;
 				if(t % params->check_step==0){

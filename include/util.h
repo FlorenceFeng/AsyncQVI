@@ -7,8 +7,9 @@
 #include <random>
 #include "util.h"
 using namespace std;
+
+extern std::mt19937 global_rng; 
 extern std::default_random_engine generator;
-extern std::mt19937 rng; 
 
 struct Params{
 	int max_outer_iter;
@@ -177,19 +178,19 @@ double get_cpu_time(){
 // generate a uniformly random integer in [start, end]
 int uniformInt(int start, int end){
 	std::uniform_int_distribution<int> uni(start, end); // guaranteed unbiased
-	return uni(rng);
+	return uni(global_rng);
 }
 
 // generate a uniformly random double in (start, end)
-double uniformDouble(double start, double end){
+double uniformDouble(double start, double end){ 
 	std::uniform_real_distribution<double> unif(0,1);
-	return start + unif(rng)*(end-start);
+	return start + unif(global_rng)*(end-start);
 }
 
 // generate a normally distributed double with mean and variance
 double normalDouble(double mean, double var){ 
 	std::normal_distribution<double> normal(mean, var);
-	return normal(rng);
+	return normal(global_rng);
 }
 
 #endif
