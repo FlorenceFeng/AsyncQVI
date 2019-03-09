@@ -14,14 +14,14 @@ using namespace std;
 class Sailing{
     
 	private:
-		int x; // x coordinate of current position
-		int y; // y coordinate of current position
-		int wind; // current wind direction
-		int DIMX; // range of x
-		int DIMY; // range of y
-		int GOALX;// x coordinate of Goal state
-		int GOALY;// y coordinate of Goal state
-		int TRAP[4][2];
+		int x; 					// x coordinate of current position
+		int y; 					// y coordinate of current position
+		int wind; 				// current wind direction
+		int DIMX; 				// range of x
+		int DIMY; 				// range of y
+		int GOALX;				// x coordinate of Goal state
+		int GOALY;				// y coordinate of Goal state
+		double probs; 			// probability of being trapped in vortex
 		std::mt19937 local_rng; // local random generator, faster for parallel computing
 			
 		// transition matrix for wind direction
@@ -43,14 +43,7 @@ class Sailing{
 			DIMY = DIMX;
 			GOALX = (int)DIMX/2;
 			GOALY = GOALX;
-			TRAP[0][0]= (int)DIMX/4;
-			TRAP[0][1] = (int)DIMY/4;
-			TRAP[1][0] = (int)DIMX/4;
-			TRAP[1][1] = (int)DIMY*3/4;
-			TRAP[2][0] = (int)DIMX*3/4;
-			TRAP[2][1] = (int)DIMY/4;
-			TRAP[3][0] = (int)DIMX*3/4;
-			TRAP[3][1] = (int)DIMY*3/4;
+			probs = params->probs;
 			local_rng.seed(uniformInt(0,100));
 		}
 		
@@ -98,19 +91,15 @@ class Sailing{
 			y = max(0, min(y + dir.second, DIMY-1));
 			
 			// some noise in positioning
-			double prob = localUniformDouble(0,1);
-			
-			if(prob < 0.05){
-				x = max(0, min(x + (int)localNormalDouble(0.,10.), DIMX-1));
-				y = max(0, min(y + (int)localNormalDouble(0.,10.), DIMY-1));
-			}
-			
-			// whether fall into traps
-			for(int i = 0; i < 4; i++){
-				if (x==TRAP[i][0] && y == TRAP[i][1]){
-					x = 0;
-					y = 0;
-				}
+			// simulate wind
+			x = max(0, min(x + (int)localNormalDouble(0.,0.1), DIMX-1));
+			y = max(0, min(y + (int)localNormalDouble(0.,0.1), DIMY-1));
+
+			// simulate vortex
+			double random_number = localUniformDouble(0,1);
+			if(random_number < probs){
+				x = max(0, min(x + (int)localNormalDouble(0.,1.), DIMX-1));
+				y = max(0, min(y + (int)localNormalDouble(0.,1.), DIMY-1));
 			}
 		}
 		
@@ -124,7 +113,7 @@ class Sailing{
 			else{	
 				int d = abs(a - wind);
 				d = d < 8 - d ? d : 8 - d;
-				return d * 0.05;
+				return d * 0.15;
 			}
 		}
 		
@@ -138,16 +127,7 @@ class Sailing{
 					break;
 				}
 			}
-		}
-		
-		void trapTransition(){
-			// change of traps
-			for(int i = 0; i < 4; i++){
-				TRAP[i][0] = max(0, min(TRAP[i][0] + (int)localNormalDouble(0.,.1), DIMX-1));
-				TRAP[i][1] = max(0, min(TRAP[i][1] + (int)localNormalDouble(0.,.1), DIMY-1));
-			}
-		}
-		
+		}		
 		
 		// sample oracle function: given init_state[i], init_action[a], rewrite next_state[j] and reward[r]
 		void SO(int i, int a, int& j, double& r){
@@ -155,7 +135,6 @@ class Sailing{
 			apply(a);
 			r = reward(a);
 			windTransition();
-			trapTransition();
 			j = stateToIndex();
 		}
 		
