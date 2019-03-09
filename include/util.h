@@ -16,20 +16,21 @@ struct Params{
 	int max_inner_iter;
 	int sample_num_1;
 	int sample_num_2;
-	double gamma = 0.99;	// discounted factor
-	double explore = 0.3;	// Q-learning exploration parameter
-	double alpha;           // Q-learning learning rate
-	double alpha1 = 0.;          // a parameter in VRQVI
-	double epsilon = 0.;               // monotonic parameter of QVI and VRVI
-	int len_state;			// dimension of state space
-	int len_action;			// dimension of action space
-	int style;         		// sample style
-	int total_num_threads;  // total number of threads
-	int algo;				// which algorithm to run
-	int save = 0;			// save final policy if 1
+	double gamma = 0.99;				// discounted factor
+	double explore = 0.3;				// Q-learning exploration parameter
+	double alpha;           		// Q-learning learning rate
+	double alpha1 = 0.;         // a parameter in VRQVI
+	double epsilon = 0.;        // monotonic parameter of QVI and VRVI
+	double probs = 0.05;				// probability of being trapped in vortex
+	int len_state;							// dimension of state space
+	int len_action;							// dimension of action space
+	int style;         					// sample style
+	int total_num_threads;  		// total number of threads
+	int algo;										// which algorithm to run
+	int save = 0;								// save final policy if 1
 	int test_max_episode = 100; // test episodes
-	int test_max_step = 200;	// how many steps to go in one test episode
-	int check_step;				// how often to check policy
+	int test_max_step = 200;		// how many steps to go in one test episode
+	int check_step;							// how often to check policy
 	
 	// The followings are not supposed to be hand-tuned
 	int stop=0;
@@ -60,6 +61,9 @@ void parse_input_argv(Params* para, int argc, char *argv[]){
 		}
 		else if (std::string(argv[i - 1]) == "-len_action") {
 			para->len_action = atoi(argv[i]);
+		}
+		else if (std::string(argv[i - 1]) == "-probs") {
+			para->probs = atoi(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-max_outer_iter") {
 			para->max_outer_iter = atoi(argv[i]);
@@ -153,9 +157,9 @@ int uniformInt(int start, int end){
 double uniformDouble(double start, double end){
 	return start + ((double) rand() / (RAND_MAX))*(end-start);
 }
-// generate a normally distributed double with mean and variance
-double normalDouble(double mean, double var){
-	std::normal_distribution<double> distribution(mean, var);
+// generate a normally distributed double with mean and standard deviation
+double normalDouble(double mean, double sd){
+	std::normal_distribution<double> distribution(mean, sd);
 	return distribution(generator);
 }
 
@@ -187,9 +191,9 @@ double uniformDouble(double start, double end){
 	return start + unif(global_rng)*(end-start);
 }
 
-// generate a normally distributed double with mean and variance
-double normalDouble(double mean, double var){ 
-	std::normal_distribution<double> normal(mean, var);
+// generate a normally distributed double with mean and standard deviation
+double normalDouble(double mean, double sd){ 
+	std::normal_distribution<double> normal(mean, sd);
 	return normal(global_rng);
 }
 
