@@ -11,6 +11,7 @@ using namespace std;
 extern std::mt19937 global_rng; 
 
 struct Params{
+<<<<<<< HEAD
 	/* sample oracle hyperparameters */
 	int len_state;				// dimension of state space
 	int len_action;				// dimension of action space
@@ -19,6 +20,27 @@ struct Params{
 	double gamma = 0.99;		// discounted factor
 	int test_max_episode = 100; // test episodes
 	int test_max_step = 200;	// how many steps to go in one test episode
+=======
+	int max_outer_iter;
+	int max_inner_iter;
+	int sample_num_1;
+	int sample_num_2;
+	double gamma = 0.99;				// discounted factor
+	double explore = 0.3;				// Q-learning exploration parameter
+	double alpha;           		// Q-learning learning rate
+	double alpha1 = 0.;         // a parameter in VRQVI
+	double epsilon = 0.;        // monotonic parameter of QVI and VRVI
+	double probs = 0.05;				// probability of being trapped in vortex
+	int len_state;							// dimension of state space
+	int len_action;							// dimension of action space
+	int style;         					// sample style
+	int total_num_threads;  		// total number of threads
+	int algo;										// which algorithm to run
+	int save = 0;								// save final policy if 1
+	int test_max_episode = 100; // test episodes
+	int test_max_step = 200;		// how many steps to go in one test episode
+	int check_step;							// how often to check policy
+>>>>>>> origin/master
 	
 	/* algorithms hyperparameters */
 	int algo;					// which algorithm to run
@@ -66,10 +88,14 @@ void parse_input_argv(Params* para, int argc, char *argv[]){
 			para->len_action = atoi(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-probs") {
+<<<<<<< HEAD
 			para->probs = atof(argv[i]);
 		}
 		else if (std::string(argv[i - 1]) == "-d") {
 			para->d = atof(argv[i]);
+=======
+			para->probs = atoi(argv[i]);
+>>>>>>> origin/master
 		}
 		else if (std::string(argv[i - 1]) == "-max_outer_iter") {
 			para->max_outer_iter = atoi(argv[i]);
@@ -174,6 +200,22 @@ double get_cpu_time(){
     return 0;
   }
 }
+<<<<<<< HEAD
+=======
+// generate a uniformly random integer in [start, end]
+int uniformInt(int start, int end){
+	return start + rand() % (end-start+1);
+}
+// generate a uniformly distributed double in (start, end)
+double uniformDouble(double start, double end){
+	return start + ((double) rand() / (RAND_MAX))*(end-start);
+}
+// generate a normally distributed double with mean and standard deviation
+double normalDouble(double mean, double sd){
+	std::normal_distribution<double> distribution(mean, sd);
+	return distribution(generator);
+}
+>>>>>>> origin/master
 
 //  Posix/Linux
 #else
@@ -190,6 +232,28 @@ double get_wall_time(){
 double get_cpu_time(){
   return (double)clock() / CLOCKS_PER_SEC;
 }
+<<<<<<< HEAD
+=======
+
+// generate a uniformly random integer in [start, end]
+int uniformInt(int start, int end){
+	std::uniform_int_distribution<int> uni(start, end); // guaranteed unbiased
+	return uni(global_rng);
+}
+
+// generate a uniformly random double in (start, end)
+double uniformDouble(double start, double end){ 
+	std::uniform_real_distribution<double> unif(0,1);
+	return start + unif(global_rng)*(end-start);
+}
+
+// generate a normally distributed double with mean and standard deviation
+double normalDouble(double mean, double sd){ 
+	std::normal_distribution<double> normal(mean, sd);
+	return normal(global_rng);
+}
+
+>>>>>>> origin/master
 #endif
 		
 #endif
