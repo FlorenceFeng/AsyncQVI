@@ -7,8 +7,10 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 #include "oracle.h"
 using namespace std;
+
 extern pthread_mutex_t writelock;
 
 class QVI{
@@ -19,10 +21,8 @@ class QVI{
 		double r;
 		double S;
 		Sailing s;
-		
-		
-	
-	public:  // global variables
+			
+	public:  // global variables shared by all threads
 		std::vector<double>* V;
 		std::vector<int>* pi;
 		Params* params;
@@ -35,10 +35,6 @@ class QVI{
 			init_state = 0;
 			init_action = 0;
 			s.setValues(params);
-		}
-		
-		void randGenerator(int thread_id){
-			srand (time(NULL)+thread_id);
 		}
 		
 		// update global variables
@@ -63,7 +59,7 @@ class QVI{
 			}
 			// averaged reward
 			S = S / params->max_inner_iter;
-			double newQ = S - (1-params->gamma)*params->epsilon/4;
+			double newQ = S - (1-params->gamma)*params->epsilon/4.;
 			
 			// update shared memory
 			pthread_mutex_lock(&writelock);
@@ -89,7 +85,7 @@ class Qlearning {
 		double r = 0.;
 		Sailing s;
 		
-	public:  // global variables
+	public:  // global variables shared by all threads
 		std::vector<std::vector<double>>* Q;
 		std::vector<double>* V;
 		std::vector<int>* pi;
@@ -104,10 +100,6 @@ class Qlearning {
 			pi = pi_;
 			params = params_;
 			s.setValues(params);			
-		}
-		
-		void randGenerator(int thread_id){
-			srand (time(NULL)+thread_id);
 		}
 		
 		// update global variables
@@ -136,8 +128,9 @@ class Qlearning {
 			
 			// update global variables with mutex
 			pthread_mutex_lock(&writelock);
+			
 			// learning rate of Q-learning
-			// params->alpha = 1./pow(iter,0.51);
+			//params->alpha = 1./pow(iter,0.51);
 			(*Q)[init_state][init_action] = (1-params->alpha) * (*Q)[init_state][init_action]
 											+ params->alpha * (r + params->gamma*(*V)[next_state]);
 			if((*Q)[init_state][init_action] > (*V)[init_state]){
@@ -218,7 +211,7 @@ class VRVI{
 					}
 				}
 				
-				// reset parameters
+				// reset parameters. The resetting fashion is tunable
 				params->epsilon /= 2.;
 				params->sample_num_1 *= 4;
 				params->sample_num_2 *= 4;
@@ -322,10 +315,10 @@ class VRQVI{
 						}
 					}
 				}
-				// reset parameters
+				// reset parameters. The resetting fashion is tunable
 				params->epsilon /= 2.;
-				params->sample_num_1 *= 2;
-				params->sample_num_2 *= 2;
+				params->sample_num_1 *= 2; 
+				params->sample_num_2 *= 2; 
 				
 				*v_outer = *v_inner;
 				if(t % params->check_step==0){

@@ -8,22 +8,25 @@
 #include <random>
 #include "util.h"
 #define DIMWIND 8
-using namespace std;
+using namespace std; 
 
 // sample orable for sailing problem
 class Sailing{
     
 	private:
-		int x; // x coordinate of current position
-		int y; // y coordinate of current position
-		int wind; // current wind direction
-		int DIMX; // range of x
-		int DIMY; // range of y
-		int GOALX;// x coordinate of Goal state
-		int GOALY;// y coordinate of Goal state
-		int TRAP[4][2];
-		std::mt19937 local_rng; // local random generator, faster for parallel computing
-			
+		int x; 					// x coordinate of current position
+		int y; 					// y coordinate of current position
+		int wind; 				// current wind direction
+		int DIMX; 				// range of x
+		int DIMY; 				// range of y
+		int GOALX;				// x coordinate of Goal state
+		int GOALY;				// y coordinate of Goal state
+		double probs; 			// probability of being trapped in vortex
+		double d;               // reward scale parameter
+		
+		// local random generator, faster for parallel computing
+		std::mt19937 local_rng; 
+		
 		// transition matrix for wind direction
 		float wind_transition[DIMWIND][DIMWIND] = {
 			{0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1, 0.2},
@@ -41,28 +44,24 @@ class Sailing{
 		void setValues(Params* params){
 			DIMX = (int)sqrt(params->len_state/DIMWIND);
 			DIMY = DIMX;
-			GOALX = (int)DIMX/2;
+			GOALX = (int)DIMX/2; // the target place is the center of the grid
 			GOALY = GOALX;
-			TRAP[0][0]= (int)DIMX/4;
-			TRAP[0][1] = (int)DIMY/4;
-			TRAP[1][0] = (int)DIMX/4;
-			TRAP[1][1] = (int)DIMY*3/4;
-			TRAP[2][0] = (int)DIMX*3/4;
-			TRAP[2][1] = (int)DIMY/4;
-			TRAP[3][0] = (int)DIMX*3/4;
-			TRAP[3][1] = (int)DIMY*3/4;
-			local_rng.seed(uniformInt(0,100));
+			probs = params->probs;
+			d = params->d;
+			std::random_device rd; 
+			local_rng.seed(rd());
 		}
 		
-		double localNormalDouble(double mean, double var){ 
-			std::normal_distribution<double> normal(mean, var);
+		double localNormalDouble(double mean, double sd){ 
+			std::normal_distribution<double> normal(mean, sd);
 			return normal(local_rng);
 		}
 		
 		double localUniformDouble(double start, double end){
-			std::uniform_real_distribution<double> unif(0,1);
-			return start + unif(local_rng)*(end-start);
+			std::uniform_real_distribution<double> unif(start, end);
+			return unif(local_rng);
 		}
+		
 		
 		// map the ith state to position and wind
 		void indexToState(int index){
@@ -98,19 +97,14 @@ class Sailing{
 			y = max(0, min(y + dir.second, DIMY-1));
 			
 			// some noise in positioning
-			double prob = localUniformDouble(0,1);
-			
-			if(prob < 0.05){
-				x = max(0, min(x + (int)localNormalDouble(0.,10.), DIMX-1));
-				y = max(0, min(y + (int)localNormalDouble(0.,10.), DIMY-1));
-			}
-			
-			// whether fall into traps
-			for(int i = 0; i < 4; i++){
-				if (x==TRAP[i][0] && y == TRAP[i][1]){
-					x = 0;
-					y = 0;
-				}
+			// simulate wind
+			x = max(0, min(x + (int)localNormalDouble(0.,0.1), DIMX-1));
+			y = max(0, min(y + (int)localNormalDouble(0.,0.1), DIMY-1));
+
+			// simulate vortex
+			if(localUniformDouble(0,1) < probs){
+				x = max(0, min(x + (int)localNormalDouble(0.,1.), DIMX-1));
+				y = max(0, min(y + (int)localNormalDouble(0.,1.), DIMY-1));
 			}
 		}
 		
@@ -122,9 +116,9 @@ class Sailing{
 			else if(x==0 & y==0)
 				return 0.;
 			else{	
-				int d = abs(a - wind);
-				d = d < 8 - d ? d : 8 - d;
-				return d * 0.05;
+				int angle = abs(a - wind);
+				angle = angle < 8 - angle ? angle : 8 - angle;
+				return angle * d;
 			}
 		}
 		
@@ -138,16 +132,7 @@ class Sailing{
 					break;
 				}
 			}
-		}
-		
-		void trapTransition(){
-			// change of traps
-			for(int i = 0; i < 4; i++){
-				TRAP[i][0] = max(0, min(TRAP[i][0] + (int)localNormalDouble(0.,.1), DIMX-1));
-				TRAP[i][1] = max(0, min(TRAP[i][1] + (int)localNormalDouble(0.,.1), DIMY-1));
-			}
-		}
-		
+		}		
 		
 		// sample oracle function: given init_state[i], init_action[a], rewrite next_state[j] and reward[r]
 		void SO(int i, int a, int& j, double& r){
@@ -155,7 +140,6 @@ class Sailing{
 			apply(a);
 			r = reward(a);
 			windTransition();
-			trapTransition();
 			j = stateToIndex();
 		}
 		
