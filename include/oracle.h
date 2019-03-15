@@ -22,16 +22,11 @@ class Sailing{
 		int GOALX;				// x coordinate of Goal state
 		int GOALY;				// y coordinate of Goal state
 		double probs; 			// probability of being trapped in vortex
-<<<<<<< HEAD
 		double d;               // reward scale parameter
 		
 		// local random generator, faster for parallel computing
 		std::mt19937 local_rng; 
 		
-=======
-		std::mt19937 local_rng; // local random generator, faster for parallel computing
-			
->>>>>>> origin/master
 		// transition matrix for wind direction
 		float wind_transition[DIMWIND][DIMWIND] = {
 			{0.3, 0.2, 0.1, 0.04, 0.02, 0.04, 0.1, 0.2},
@@ -52,13 +47,9 @@ class Sailing{
 			GOALX = (int)DIMX/2; // the target place is the center of the grid
 			GOALY = GOALX;
 			probs = params->probs;
-<<<<<<< HEAD
 			d = params->d;
 			std::random_device rd; 
 			local_rng.seed(rd());
-=======
-			local_rng.seed(uniformInt(0,100));
->>>>>>> origin/master
 		}
 		
 		double localNormalDouble(double mean, double sd){ 
@@ -111,12 +102,7 @@ class Sailing{
 			y = max(0, min(y + (int)localNormalDouble(0.,0.1), DIMY-1));
 
 			// simulate vortex
-<<<<<<< HEAD
 			if(localUniformDouble(0,1) < probs){
-=======
-			double random_number = localUniformDouble(0,1);
-			if(random_number < probs){
->>>>>>> origin/master
 				x = max(0, min(x + (int)localNormalDouble(0.,1.), DIMX-1));
 				y = max(0, min(y + (int)localNormalDouble(0.,1.), DIMY-1));
 			}
@@ -130,15 +116,9 @@ class Sailing{
 			else if(x==0 & y==0)
 				return 0.;
 			else{	
-<<<<<<< HEAD
 				int angle = abs(a - wind);
 				angle = angle < 8 - angle ? angle : 8 - angle;
 				return angle * d;
-=======
-				int d = abs(a - wind);
-				d = d < 8 - d ? d : 8 - d;
-				return d * 0.15;
->>>>>>> origin/master
 			}
 		}
 		
